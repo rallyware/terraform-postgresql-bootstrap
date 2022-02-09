@@ -69,44 +69,45 @@ variable "roles" {
       sequence_privileges       = optional(string)
     }
   ))
-  default     = []
+  default = []
+  #tfsec:ignore:general-secrets-no-plaintext-exposure
   description = <<-DOC
-	A list of roles to create.
-		name:
-			The role name.
-		database:
-			The database to grant privileges on for this role.
-		superuser:
-			Defines whether the role is a `superuser`.
-		create_database:
-			Defines a role's ability to execute `CREATE DATABASE`.
-		create_role:
-			Defines a role's ability to execute `CREATE ROLE`.
-		inherit:
-			Defines whether a role `inherits` the privileges of roles it is a member of.
-		login:
-			Defines whether role is allowed to log in.
-		replication:
-			Defines whether a role is allowed to initiate streaming replication or put the system in and out of backup mode.
-		bypass_row_level_security:
-			Defines whether a role bypasses every row-level security (RLS) policy.
-		connection_limit:
-			How many concurrent connections the role can establish. 
-		encrypted_password:
-			Defines whether the password is stored encrypted in the system catalogs.
-		roles:
-			A comma separated list of roles which will be granted to this new role.
-		valid_until:
-			Defines the date and time after which the role's password is no longer valid.
-		schema:
-			The database schema to grant privileges on for this role.
-		with_grant_option:
-			Whether the recipient of these privileges can grant the same privileges to others.
-		database_privileges:
-			A comma separated list of roles which will be granted to database.
-		table_privileges:
-			A comma separated list of roles which will be granted to tables.
-		sequence_privileges:
-			A comma separated list of roles which will be granted to sequence.
+		A list of roles to create.
+			name:
+				The role name.
+			database:
+				The database to grant privileges on for this role.
+			superuser:
+				Defines whether the role is a `superuser`.
+			create_database:
+				Defines a role's ability to execute `CREATE DATABASE`.
+			create_role:
+				Defines a role's ability to execute `CREATE ROLE`.
+			inherit:
+				Defines whether a role `inherits` the privileges of roles it is a member of.
+			login:
+				Defines whether role is allowed to log in.
+			replication:
+				Defines whether a role is allowed to initiate streaming replication or put the system in and out of backup mode.
+			bypass_row_level_security:
+				Defines whether a role bypasses every row-level security (RLS) policy.
+			connection_limit:
+				How many concurrent connections the role can establish. 
+			encrypted_password:
+				Defines whether the password is stored encrypted in the system catalogs.
+			roles:
+				A comma separated list of roles which will be granted to this new role.
+			valid_until:
+				Defines the date and time after which the role's password is no longer valid.
+			schema:
+				The database schema to grant privileges on for this role.
+			with_grant_option:
+				Whether the recipient of these privileges can grant the same privileges to others.
+			database_privileges:
+				A comma separated list of roles which will be granted to database.
+			table_privileges:
+				A comma separated list of roles which will be granted to tables.
+			sequence_privileges:
+				A comma separated list of roles which will be granted to sequence.
 	DOC
 }
