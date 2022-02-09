@@ -1,12 +1,46 @@
+# terraform-postgresql-bootstrap
+
+Terraform module to provision and manage postgresql resources.   
+
 ## Usage
 
 ```hcl
-module "your_aweasome_resource" {
-  source    = ""
-  namespace = "sweetops"
-  stage     = "production"
-  name      = "aweasome"
-}
+  module "bootstrap_db" {
+    source = "./"
+
+    extensions = ["pg_stat_statements", "pg_hint_plan"]
+
+    databases = [
+      {
+        name = "test"
+      }
+    ]
+
+    roles = [
+      {
+        name                = "test"
+        database            = "test"
+        database_privileges = "CONNECT,CREATE,TEMPORARY"
+        table_privileges    = "SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER"
+        sequence_privileges = "USAGE,SELECT,UPDATE"
+      },
+
+      {
+        name                = "test-ro"
+        database            = "test"
+        database_privileges = "CONNECT"
+        table_privileges    = "SELECT"
+        sequence_privileges = "USAGE,SELECT"
+      },
+
+      {
+        name                = "prometheus-exporter"
+        roles               = "pg_read_all_stats,pg_read_all_settings"
+        database            = "test"
+        database_privileges = "CONNECT"
+      }
+    ]
+  }
 ```
 
 <!-- BEGIN_TF_DOCS -->
@@ -15,47 +49,46 @@ module "your_aweasome_resource" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
+| <a name="requirement_postgresql"></a> [postgresql](#requirement\_postgresql) | >= 1.14 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3 |
 
 ## Providers
 
-No providers.
+| Name | Version |
+|------|---------|
+| <a name="provider_postgresql"></a> [postgresql](#provider\_postgresql) | >= 1.14 |
+| <a name="provider_random"></a> [random](#provider\_random) | >= 3 |
 
 ## Modules
 
-| Name | Source | Version |
-|------|--------|---------|
-| <a name="module_this"></a> [this](#module\_this) | cloudposse/label/null | 0.25.0 |
+No modules.
 
 ## Resources
 
-No resources.
+| Name | Type |
+|------|------|
+| [postgresql_database.default](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/database) | resource |
+| [postgresql_extension.default](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/extension) | resource |
+| [postgresql_grant.database](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/grant) | resource |
+| [postgresql_grant.sequence](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/grant) | resource |
+| [postgresql_grant.table](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/grant) | resource |
+| [postgresql_role.default](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/role) | resource |
+| [random_password.default](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_additional_tag_map"></a> [additional\_tag\_map](#input\_additional\_tag\_map) | Additional key-value pairs to add to each map in `tags_as_list_of_maps`. Not added to `tags` or `id`.<br>This is for some rare cases where resources want additional configuration of tags<br>and therefore take a list of maps with tag key, value, and additional configuration. | `map(string)` | `{}` | no |
-| <a name="input_attributes"></a> [attributes](#input\_attributes) | ID element. Additional attributes (e.g. `workers` or `cluster`) to add to `id`,<br>in the order they appear in the list. New attributes are appended to the<br>end of the list. The elements of the list are joined by the `delimiter`<br>and treated as a single ID element. | `list(string)` | `[]` | no |
-| <a name="input_context"></a> [context](#input\_context) | Single object for setting entire context at once.<br>See description of individual variables for details.<br>Leave string and numeric variables as `null` to use default value.<br>Individual variable settings (non-null) override settings in context object,<br>except for attributes, tags, and additional\_tag\_map, which are merged. | `any` | <pre>{<br>  "additional_tag_map": {},<br>  "attributes": [],<br>  "delimiter": null,<br>  "descriptor_formats": {},<br>  "enabled": true,<br>  "environment": null,<br>  "id_length_limit": null,<br>  "label_key_case": null,<br>  "label_order": [],<br>  "label_value_case": null,<br>  "labels_as_tags": [<br>    "unset"<br>  ],<br>  "name": null,<br>  "namespace": null,<br>  "regex_replace_chars": null,<br>  "stage": null,<br>  "tags": {},<br>  "tenant": null<br>}</pre> | no |
-| <a name="input_delimiter"></a> [delimiter](#input\_delimiter) | Delimiter to be used between ID elements.<br>Defaults to `-` (hyphen). Set to `""` to use no delimiter at all. | `string` | `null` | no |
-| <a name="input_descriptor_formats"></a> [descriptor\_formats](#input\_descriptor\_formats) | Describe additional descriptors to be output in the `descriptors` output map.<br>Map of maps. Keys are names of descriptors. Values are maps of the form<br>`{<br>   format = string<br>   labels = list(string)<br>}`<br>(Type is `any` so the map values can later be enhanced to provide additional options.)<br>`format` is a Terraform format string to be passed to the `format()` function.<br>`labels` is a list of labels, in order, to pass to `format()` function.<br>Label values will be normalized before being passed to `format()` so they will be<br>identical to how they appear in `id`.<br>Default is `{}` (`descriptors` output will be empty). | `any` | `{}` | no |
-| <a name="input_enabled"></a> [enabled](#input\_enabled) | Set to false to prevent the module from creating any resources | `bool` | `null` | no |
-| <a name="input_environment"></a> [environment](#input\_environment) | ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT' | `string` | `null` | no |
-| <a name="input_id_length_limit"></a> [id\_length\_limit](#input\_id\_length\_limit) | Limit `id` to this many characters (minimum 6).<br>Set to `0` for unlimited length.<br>Set to `null` for keep the existing setting, which defaults to `0`.<br>Does not affect `id_full`. | `number` | `null` | no |
-| <a name="input_label_key_case"></a> [label\_key\_case](#input\_label\_key\_case) | Controls the letter case of the `tags` keys (label names) for tags generated by this module.<br>Does not affect keys of tags passed in via the `tags` input.<br>Possible values: `lower`, `title`, `upper`.<br>Default value: `title`. | `string` | `null` | no |
-| <a name="input_label_order"></a> [label\_order](#input\_label\_order) | The order in which the labels (ID elements) appear in the `id`.<br>Defaults to ["namespace", "environment", "stage", "name", "attributes"].<br>You can omit any of the 6 labels ("tenant" is the 6th), but at least one must be present. | `list(string)` | `null` | no |
-| <a name="input_label_value_case"></a> [label\_value\_case](#input\_label\_value\_case) | Controls the letter case of ID elements (labels) as included in `id`,<br>set as tag values, and output by this module individually.<br>Does not affect values of tags passed in via the `tags` input.<br>Possible values: `lower`, `title`, `upper` and `none` (no transformation).<br>Set this to `title` and set `delimiter` to `""` to yield Pascal Case IDs.<br>Default value: `lower`. | `string` | `null` | no |
-| <a name="input_labels_as_tags"></a> [labels\_as\_tags](#input\_labels\_as\_tags) | Set of labels (ID elements) to include as tags in the `tags` output.<br>Default is to include all labels.<br>Tags with empty values will not be included in the `tags` output.<br>Set to `[]` to suppress all generated tags.<br>**Notes:**<br>  The value of the `name` tag, if included, will be the `id`, not the `name`.<br>  Unlike other `null-label` inputs, the initial setting of `labels_as_tags` cannot be<br>  changed in later chained modules. Attempts to change it will be silently ignored. | `set(string)` | <pre>[<br>  "default"<br>]</pre> | no |
-| <a name="input_name"></a> [name](#input\_name) | ID element. Usually the component or solution name, e.g. 'app' or 'jenkins'.<br>This is the only ID element not also included as a `tag`.<br>The "name" tag is set to the full `id` string. There is no tag with the value of the `name` input. | `string` | `null` | no |
-| <a name="input_namespace"></a> [namespace](#input\_namespace) | ID element. Usually an abbreviation of your organization name, e.g. 'eg' or 'cp', to help ensure generated IDs are globally unique | `string` | `null` | no |
-| <a name="input_regex_replace_chars"></a> [regex\_replace\_chars](#input\_regex\_replace\_chars) | Terraform regular expression (regex) string.<br>Characters matching the regex will be removed from the ID elements.<br>If not set, `"/[^a-zA-Z0-9-]/"` is used to remove all characters other than hyphens, letters and digits. | `string` | `null` | no |
-| <a name="input_stage"></a> [stage](#input\_stage) | ID element. Usually used to indicate role, e.g. 'prod', 'staging', 'source', 'build', 'test', 'deploy', 'release' | `string` | `null` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | Additional tags (e.g. `{'BusinessUnit': 'XYZ'}`).<br>Neither the tag keys nor the tag values will be modified by this module. | `map(string)` | `{}` | no |
-| <a name="input_tenant"></a> [tenant](#input\_tenant) | ID element \_(Rarely used, not included by default)\_. A customer identifier, indicating who this instance of a resource is for | `string` | `null` | no |
+| <a name="input_databases"></a> [databases](#input\_databases) | A list of databases to create.<br>   name:<br>     The name of the database.<br>owner:<br>	The role name of the user who will own the database.<br>tablespace\_name:<br>	The name of the tablespace that will be associated with the database.<br>connection\_limit:<br>	How many concurrent connections can be established to this database.<br>allow\_connections:<br>	If `false` then no one can connect to this database.<br>is\_template:<br>	If `true`, then this database can be cloned by any user with `CREATEDB` privileges.<br>template:<br>	The name of the template database from which to create the database.<br>encoding:<br>	Character set encoding to use in the database. <br>lc\_collate:<br>	Collation order to use in the database.<br>lc\_ctype:<br>	Character classification to use in the database. | <pre>list(object(<br>    {<br>      name              = string<br>      owner             = optional(string)<br>      tablespace_name   = optional(string)<br>      connection_limit  = optional(number)<br>      allow_connections = optional(bool)<br>      is_template       = optional(bool)<br>      encoding          = optional(string)<br>      template          = optional(string)<br>      lc_collate        = optional(string)<br>      lc_ctype          = optional(string)<br>    }<br>  ))</pre> | `[]` | no |
+| <a name="input_extensions"></a> [extensions](#input\_extensions) | A list of names of the extension to enable. | `list(string)` | <pre>[<br>  "pg_stat_statements",<br>  "pg_hint_plan"<br>]</pre> | no |
+| <a name="input_roles"></a> [roles](#input\_roles) | A list of roles to create.<br>	name:<br>		The role name.<br>	database:<br>		The database to grant privileges on for this role.<br>	superuser:<br>		Defines whether the role is a `superuser`.<br>	create\_database:<br>		Defines a role's ability to execute `CREATE DATABASE`.<br>	create\_role:<br>		Defines a role's ability to execute `CREATE ROLE`.<br>	inherit:<br>		Defines whether a role `inherits` the privileges of roles it is a member of.<br>	login:<br>		Defines whether role is allowed to log in.<br>	replication:<br>		Defines whether a role is allowed to initiate streaming replication or put the system in and out of backup mode.<br>	bypass\_row\_level\_security:<br>		Defines whether a role bypasses every row-level security (RLS) policy.<br>	connection\_limit:<br>		How many concurrent connections the role can establish. <br>	encrypted\_password:<br>		Defines whether the password is stored encrypted in the system catalogs.<br>	roles:<br>		A comma separated list of roles which will be granted to this new role.<br>	valid\_until:<br>		Defines the date and time after which the role's password is no longer valid.<br>	schema:<br>		The database schema to grant privileges on for this role.<br>	with\_grant\_option:<br>		Whether the recipient of these privileges can grant the same privileges to others.<br>	database\_privileges:<br>		A comma separated list of roles which will be granted to database.<br>	table\_privileges:<br>		A comma separated list of roles which will be granted to tables.<br>	sequence\_privileges:<br>		A comma separated list of roles which will be granted to sequence. | <pre>list(object(<br>    {<br>      name                      = string<br>      database                  = optional(string)<br>      superuser                 = optional(bool)<br>      create_database           = optional(bool)<br>      create_role               = optional(bool)<br>      inherit                   = optional(bool)<br>      login                     = optional(bool)<br>      replication               = optional(bool)<br>      connection_limit          = optional(number)<br>      encrypted_password        = optional(bool)<br>      bypass_row_level_security = optional(bool)<br>      valid_until               = optional(string)<br>      roles                     = optional(string)<br>      search_path               = optional(string)<br>      schema                    = optional(string)<br>      with_grant_option         = optional(string)<br>      database_privileges       = optional(string)<br>      table_privileges          = optional(string)<br>      sequence_privileges       = optional(string)<br>    }<br>  ))</pre> | `[]` | no |
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_databases"></a> [databases](#output\_databases) | A list of databases. |
+| <a name="output_roles"></a> [roles](#output\_roles) | A map of role name per password. |
 <!-- END_TF_DOCS --> 
 
 ## License
