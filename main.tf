@@ -55,6 +55,30 @@ resource "postgresql_extension" "default" {
   schema = each.value == "pg_hint_plan" ? null : "public"
 }
 
+resource "postgresql_database" "default" {
+  for_each = local.databases_set
+
+  name              = each.value.name
+  owner             = each.value.owner
+  tablespace_name   = each.value.tablespace_name
+  connection_limit  = each.value.connection_limit
+  allow_connections = each.value.allow_connections
+  is_template       = each.value.is_template
+  template          = each.value.template
+  encoding          = each.value.encoding
+  lc_collate        = each.value.lc_collate
+  lc_ctype          = each.value.lc_ctype
+}
+
+resource "time_sleep" "default" {
+  destroy_duration = "30s"
+  create_duration  = "30s"
+
+  depends_on = [
+    postgresql_role.default
+  ]
+}
+
 resource "postgresql_role" "default" {
   for_each = local.roles_set
 
@@ -70,25 +94,6 @@ resource "postgresql_role" "default" {
   roles                     = length(each.value.roles) > 0 ? split(",", each.value.roles) : null
   search_path               = length(each.value.search_path) > 0 ? split(",", each.value.search_path) : null
   password                  = random_password.default[each.key].result
-
-  depends_on = [
-    postgresql_database.default
-  ]
-}
-
-resource "postgresql_database" "default" {
-  for_each = local.databases_set
-
-  name              = each.value.name
-  owner             = each.value.owner
-  tablespace_name   = each.value.tablespace_name
-  connection_limit  = each.value.connection_limit
-  allow_connections = each.value.allow_connections
-  is_template       = each.value.is_template
-  template          = each.value.template
-  encoding          = each.value.encoding
-  lc_collate        = each.value.lc_collate
-  lc_ctype          = each.value.lc_ctype
 }
 
 resource "postgresql_grant" "database" {

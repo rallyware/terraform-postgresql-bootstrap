@@ -51,6 +51,7 @@ Terraform module to provision and manage postgresql resources.
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
 | <a name="requirement_postgresql"></a> [postgresql](#requirement\_postgresql) | >= 1.14 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 3 |
+| <a name="requirement_time"></a> [time](#requirement\_time) | >= 0.7 |
 
 ## Providers
 
@@ -58,6 +59,7 @@ Terraform module to provision and manage postgresql resources.
 |------|---------|
 | <a name="provider_postgresql"></a> [postgresql](#provider\_postgresql) | >= 1.14 |
 | <a name="provider_random"></a> [random](#provider\_random) | >= 3 |
+| <a name="provider_time"></a> [time](#provider\_time) | >= 0.7 |
 
 ## Modules
 
@@ -74,6 +76,7 @@ No modules.
 | [postgresql_grant.table](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/grant) | resource |
 | [postgresql_role.default](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/role) | resource |
 | [random_password.default](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [time_sleep.default](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 
 ## Inputs
 
