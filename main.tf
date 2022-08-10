@@ -7,7 +7,7 @@ locals {
         connection_limit  = -1
         allow_connections = true
         is_template       = false
-        template          = "template0"
+        template          = "template1"
         encoding          = "UTF8"
         lc_collate        = "en_US.UTF-8"
         lc_ctype          = "en_US.UTF-8"
@@ -36,6 +36,7 @@ locals {
         database_privileges       = ""
         table_privileges          = ""
         sequence_privileges       = ""
+        revoke_public             = true
       }
     )
   }
@@ -131,6 +132,37 @@ resource "postgresql_grant" "sequence" {
   schema      = each.value.schema
   object_type = "sequence"
   privileges  = split(",", each.value.sequence_privileges)
+
+  depends_on = [
+    postgresql_database.default
+  ]
+}
+
+resource "postgresql_grant" "revoke_public_schema" {
+  for_each = { for k, v in local.roles_set : k => v if v.revoke_public }
+
+  database          = each.value.database
+  role              = postgresql_role.default[each.key].name
+  schema            = "public"
+  object_type       = "schema"
+  privileges        = []
+  with_grant_option = true
+
+  depends_on = [
+    postgresql_database.default,
+    postgresql_grant.database,
+    postgresql_grant.table,
+    postgresql_grant.sequence
+  ]
+}
+
+resource "postgresql_grant" "revoke_public_database" {
+  for_each = { for k, v in local.roles_set : k => v if v.revoke_public }
+
+  database    = each.value.database
+  role        = "public"
+  object_type = "database"
+  privileges  = []
 
   depends_on = [
     postgresql_database.default
