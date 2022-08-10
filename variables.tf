@@ -35,7 +35,7 @@ variable "databases" {
 			is_template:
 				If `true`, then this database can be cloned by any user with `CREATEDB` privileges.
 			template:
-				The name of the template database from which to create the database.
+				The name of the template database from which to create the database. For `non-RDS` should be `template0`.
 			encoding:
 				Character set encoding to use in the database. 
 			lc_collate:
@@ -67,6 +67,7 @@ variable "roles" {
       database_privileges       = optional(string)
       table_privileges          = optional(string)
       sequence_privileges       = optional(string)
+      revoke_public             = optional(bool)
     }
   ))
   default = []
@@ -109,5 +110,7 @@ variable "roles" {
 				A comma separated list of roles which will be granted to tables.
 			sequence_privileges:
 				A comma separated list of roles which will be granted to sequence.
+			revoke_public:
+				Whether to revoke non-granted privileges form the role.
 	DOC
 }
