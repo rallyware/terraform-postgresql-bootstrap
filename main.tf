@@ -12,10 +12,10 @@ locals {
         lc_collate        = "en_US.UTF-8"
         lc_ctype          = "en_US.UTF-8"
       }
-    ),
-    {
-      index = indx
-    }
+      ),
+      {
+        index = indx
+      }
     )
   }
 
@@ -42,10 +42,10 @@ locals {
         sequence_privileges       = ""
         revoke_public             = true
       }
-    ),
-    {
-      index = indx
-    }
+      ),
+      {
+        index = indx
+      }
     )
   }
 }
@@ -80,7 +80,7 @@ resource "postgresql_database" "default" {
 }
 
 resource "time_sleep" "db_wait" {
-    for_each = local.databases_set
+  for_each = local.databases_set
 
   destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
   create_duration  = format("%ss", sum([2 * each.value.index, 3]))
@@ -106,7 +106,7 @@ resource "postgresql_role" "default" {
   search_path               = length(each.value.search_path) > 0 ? split(",", each.value.search_path) : null
   password                  = random_password.default[each.key].result
 
-    depends_on = [
+  depends_on = [
     time_sleep.db_wait
   ]
 }
