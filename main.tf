@@ -64,32 +64,6 @@ resource "postgresql_extension" "default" {
   schema = each.value == "pg_hint_plan" ? null : "public"
 }
 
-resource "postgresql_database" "default" {
-  for_each = local.databases_set
-
-  name              = each.value.name
-  owner             = each.value.owner
-  tablespace_name   = each.value.tablespace_name
-  connection_limit  = each.value.connection_limit
-  allow_connections = each.value.allow_connections
-  is_template       = each.value.is_template
-  template          = each.value.template
-  encoding          = each.value.encoding
-  lc_collate        = each.value.lc_collate
-  lc_ctype          = each.value.lc_ctype
-}
-
-resource "time_sleep" "db_wait" {
-  for_each = local.databases_set
-
-  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
-  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
-
-  depends_on = [
-    postgresql_database.default
-  ]
-}
-
 resource "postgresql_role" "default" {
   for_each = local.roles_set
 
@@ -105,10 +79,6 @@ resource "postgresql_role" "default" {
   roles                     = length(each.value.roles) > 0 ? split(",", each.value.roles) : null
   search_path               = length(each.value.search_path) > 0 ? split(",", each.value.search_path) : null
   password                  = random_password.default[each.key].result
-
-  depends_on = [
-    time_sleep.db_wait
-  ]
 }
 
 resource "time_sleep" "role_wait" {
@@ -117,21 +87,56 @@ resource "time_sleep" "role_wait" {
   destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
   create_duration  = format("%ss", sum([2 * each.value.index, 3]))
 
+  triggers = {
+    role = postgresql_role.default[each.key].name
+  }
+
   depends_on = [
     postgresql_role.default
   ]
 }
 
+resource "postgresql_database" "default" {
+  for_each = local.databases_set
+
+  name              = each.value.name
+  owner             = each.value.owner
+  tablespace_name   = each.value.tablespace_name
+  connection_limit  = each.value.connection_limit
+  allow_connections = each.value.allow_connections
+  is_template       = each.value.is_template
+  template          = each.value.template
+  encoding          = each.value.encoding
+  lc_collate        = each.value.lc_collate
+  lc_ctype          = each.value.lc_ctype
+
+  depends_on = [
+    postgresql_role.default,
+    time_sleep.role_wait
+  ]
+}
+
+resource "time_sleep" "db_wait" {
+  for_each = local.databases_set
+
+  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
+  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
+
+  depends_on = [
+    postgresql_database.default
+  ]
+}
 
 resource "postgresql_grant" "database" {
   for_each = { for k, v in local.roles_set : k => v if length(v.database_privileges) > 0 }
 
   database    = each.value.database
-  role        = postgresql_role.default[each.key].name
+  role        = time_sleep.role_wait[each.key].triggers["role"]
   object_type = "database"
   privileges  = split(",", each.value.database_privileges)
 
   depends_on = [
+    postgresql_role.default,
     time_sleep.db_wait,
     time_sleep.role_wait
   ]
@@ -152,12 +157,13 @@ resource "postgresql_grant" "table" {
   for_each = { for k, v in local.roles_set : k => v if length(v.table_privileges) > 0 }
 
   database    = each.value.database
-  role        = postgresql_role.default[each.key].name
+  role        = time_sleep.role_wait[each.key].triggers["role"]
   schema      = each.value.schema
   object_type = "table"
   privileges  = split(",", each.value.table_privileges)
 
   depends_on = [
+    postgresql_role.default,
     time_sleep.db_wait,
     time_sleep.role_wait,
     time_sleep.grant_database_wait
@@ -179,12 +185,13 @@ resource "postgresql_grant" "sequence" {
   for_each = { for k, v in local.roles_set : k => v if length(v.sequence_privileges) > 0 }
 
   database    = each.value.database
-  role        = postgresql_role.default[each.key].name
+  role        = time_sleep.role_wait[each.key].triggers["role"]
   schema      = each.value.schema
   object_type = "sequence"
   privileges  = split(",", each.value.sequence_privileges)
 
   depends_on = [
+    postgresql_role.default,
     time_sleep.db_wait,
     time_sleep.role_wait,
     time_sleep.grant_database_wait,
@@ -207,13 +214,14 @@ resource "postgresql_grant" "revoke_public_schema" {
   for_each = { for k, v in local.roles_set : k => v if v.revoke_public }
 
   database          = each.value.database
-  role              = postgresql_role.default[each.key].name
+  role              = time_sleep.role_wait[each.key].triggers["role"]
   schema            = "public"
   object_type       = "schema"
   privileges        = []
   with_grant_option = true
 
   depends_on = [
+    postgresql_role.default,
     time_sleep.db_wait,
     time_sleep.role_wait,
     time_sleep.grant_database_wait,
@@ -242,6 +250,7 @@ resource "postgresql_grant" "revoke_public_database" {
   privileges  = []
 
   depends_on = [
+    postgresql_role.default,
     time_sleep.db_wait,
     time_sleep.role_wait,
     time_sleep.grant_database_wait,
