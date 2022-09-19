@@ -1,6 +1,6 @@
 locals {
   databases_set = {
-    for db in var.databases : db.name => defaults(db,
+    for indx, db in var.databases : db.name => merge(defaults(db,
       {
         owner             = ""
         tablespace_name   = ""
@@ -12,11 +12,15 @@ locals {
         lc_collate        = "en_US.UTF-8"
         lc_ctype          = "en_US.UTF-8"
       }
+      ),
+      {
+        index = indx
+      }
     )
   }
 
   roles_set = {
-    for role in var.roles : role.name => defaults(role,
+    for indx, role in var.roles : role.name => merge(defaults(role,
       {
         database                  = ""
         superuser                 = false
@@ -37,6 +41,10 @@ locals {
         table_privileges          = ""
         sequence_privileges       = ""
         revoke_public             = true
+      }
+      ),
+      {
+        index = indx
       }
     )
   }
@@ -71,12 +79,14 @@ resource "postgresql_database" "default" {
   lc_ctype          = each.value.lc_ctype
 }
 
-resource "time_sleep" "default" {
-  destroy_duration = "30s"
-  create_duration  = "30s"
+resource "time_sleep" "db_wait" {
+  for_each = local.databases_set
+
+  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
+  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
 
   depends_on = [
-    postgresql_role.default
+    postgresql_database.default
   ]
 }
 
@@ -95,7 +105,23 @@ resource "postgresql_role" "default" {
   roles                     = length(each.value.roles) > 0 ? split(",", each.value.roles) : null
   search_path               = length(each.value.search_path) > 0 ? split(",", each.value.search_path) : null
   password                  = random_password.default[each.key].result
+
+  depends_on = [
+    time_sleep.db_wait
+  ]
 }
+
+resource "time_sleep" "role_wait" {
+  for_each = local.roles_set
+
+  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
+  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
+
+  depends_on = [
+    postgresql_role.default
+  ]
+}
+
 
 resource "postgresql_grant" "database" {
   for_each = { for k, v in local.roles_set : k => v if length(v.database_privileges) > 0 }
@@ -106,7 +132,19 @@ resource "postgresql_grant" "database" {
   privileges  = split(",", each.value.database_privileges)
 
   depends_on = [
-    postgresql_database.default
+    time_sleep.db_wait,
+    time_sleep.role_wait
+  ]
+}
+
+resource "time_sleep" "grant_database_wait" {
+  for_each = { for k, v in local.roles_set : k => v if length(v.database_privileges) > 0 }
+
+  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
+  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
+
+  depends_on = [
+    postgresql_grant.database
   ]
 }
 
@@ -120,7 +158,20 @@ resource "postgresql_grant" "table" {
   privileges  = split(",", each.value.table_privileges)
 
   depends_on = [
-    postgresql_database.default
+    time_sleep.db_wait,
+    time_sleep.role_wait,
+    time_sleep.grant_database_wait
+  ]
+}
+
+resource "time_sleep" "grant_table_wait" {
+  for_each = { for k, v in local.roles_set : k => v if length(v.table_privileges) > 0 }
+
+  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
+  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
+
+  depends_on = [
+    postgresql_grant.table
   ]
 }
 
@@ -134,7 +185,21 @@ resource "postgresql_grant" "sequence" {
   privileges  = split(",", each.value.sequence_privileges)
 
   depends_on = [
-    postgresql_database.default
+    time_sleep.db_wait,
+    time_sleep.role_wait,
+    time_sleep.grant_database_wait,
+    time_sleep.grant_table_wait
+  ]
+}
+
+resource "time_sleep" "grant_sequence_wait" {
+  for_each = { for k, v in local.roles_set : k => v if length(v.sequence_privileges) > 0 }
+
+  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
+  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
+
+  depends_on = [
+    postgresql_grant.sequence
   ]
 }
 
@@ -149,10 +214,22 @@ resource "postgresql_grant" "revoke_public_schema" {
   with_grant_option = true
 
   depends_on = [
-    postgresql_database.default,
-    postgresql_grant.database,
-    postgresql_grant.table,
-    postgresql_grant.sequence
+    time_sleep.db_wait,
+    time_sleep.role_wait,
+    time_sleep.grant_database_wait,
+    time_sleep.grant_table_wait,
+    time_sleep.grant_sequence_wait
+  ]
+}
+
+resource "time_sleep" "revoke_public_schema_wait" {
+  for_each = { for k, v in local.roles_set : k => v if v.revoke_public }
+
+  destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
+  create_duration  = format("%ss", sum([2 * each.value.index, 3]))
+
+  depends_on = [
+    postgresql_grant.revoke_public_schema
   ]
 }
 
@@ -165,6 +242,11 @@ resource "postgresql_grant" "revoke_public_database" {
   privileges  = []
 
   depends_on = [
-    postgresql_database.default
+    time_sleep.db_wait,
+    time_sleep.role_wait,
+    time_sleep.grant_database_wait,
+    time_sleep.grant_table_wait,
+    time_sleep.grant_sequence_wait,
+    time_sleep.revoke_public_schema_wait
   ]
 }
