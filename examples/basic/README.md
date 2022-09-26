@@ -46,7 +46,12 @@ Terraform module to provision and manage postgresql resources.
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-No requirements.
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
+| <a name="requirement_postgresql"></a> [postgresql](#requirement\_postgresql) | >= 1.14 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3 |
+| <a name="requirement_time"></a> [time](#requirement\_time) | >= 0.7 |
 
 ## Providers
 

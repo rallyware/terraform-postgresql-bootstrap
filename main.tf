@@ -1,18 +1,7 @@
 locals {
   databases_set = {
-    for indx, db in var.databases : db.name => merge(defaults(db,
-      {
-        owner             = ""
-        tablespace_name   = ""
-        connection_limit  = -1
-        allow_connections = true
-        is_template       = false
-        template          = "template1"
-        encoding          = "UTF8"
-        lc_collate        = "en_US.UTF-8"
-        lc_ctype          = "en_US.UTF-8"
-      }
-      ),
+    for indx, db in var.databases : db.name => merge(
+      db,
       {
         index = indx
       }
@@ -20,29 +9,8 @@ locals {
   }
 
   roles_set = {
-    for indx, role in var.roles : role.name => merge(defaults(role,
-      {
-        database                  = ""
-        superuser                 = false
-        create_database           = false
-        create_role               = false
-        inherit                   = true
-        login                     = true
-        replication               = false
-        bypass_row_level_security = false
-        connection_limit          = -1
-        encrypted_password        = true
-        valid_until               = "infinity"
-        roles                     = ""
-        search_path               = ""
-        schema                    = "public"
-        with_grant_option         = false
-        database_privileges       = ""
-        table_privileges          = ""
-        sequence_privileges       = ""
-        revoke_public             = true
-      }
-      ),
+    for indx, role in var.roles : role.name => merge(
+      role,
       {
         index = indx
       }
