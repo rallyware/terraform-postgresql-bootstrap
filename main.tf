@@ -44,8 +44,8 @@ resource "postgresql_role" "default" {
   replication               = each.value.replication
   bypass_row_level_security = each.value.bypass_row_level_security
   valid_until               = each.value.valid_until
-  roles                     = length(each.value.roles) > 0 ? split(",", each.value.roles) : null
-  search_path               = length(each.value.search_path) > 0 ? split(",", each.value.search_path) : null
+  roles                     = each.value.roles != null ? each.value.roles : null
+  search_path               = each.value.search_path != null ? each.value.search_path : null
   password                  = random_password.default[each.key].result
 }
 
@@ -96,12 +96,12 @@ resource "time_sleep" "db_wait" {
 }
 
 resource "postgresql_grant" "database" {
-  for_each = { for k, v in local.roles_set : k => v if length(v.database_privileges) > 0 }
+  for_each = { for k, v in local.roles_set : k => v if v.database_privileges != null }
 
   database    = each.value.database
   role        = time_sleep.role_wait[each.key].triggers["role"]
   object_type = "database"
-  privileges  = split(",", each.value.database_privileges)
+  privileges  = each.value.database_privileges
 
   depends_on = [
     postgresql_role.default,
@@ -111,7 +111,7 @@ resource "postgresql_grant" "database" {
 }
 
 resource "time_sleep" "grant_database_wait" {
-  for_each = { for k, v in local.roles_set : k => v if length(v.database_privileges) > 0 }
+  for_each = { for k, v in local.roles_set : k => v if v.database_privileges != null }
 
   destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
   create_duration  = format("%ss", sum([2 * each.value.index, 3]))
@@ -122,13 +122,13 @@ resource "time_sleep" "grant_database_wait" {
 }
 
 resource "postgresql_grant" "table" {
-  for_each = { for k, v in local.roles_set : k => v if length(v.table_privileges) > 0 }
+  for_each = { for k, v in local.roles_set : k => v if v.table_privileges != null }
 
   database    = each.value.database
   role        = time_sleep.role_wait[each.key].triggers["role"]
   schema      = each.value.schema
   object_type = "table"
-  privileges  = split(",", each.value.table_privileges)
+  privileges  = each.value.table_privileges
 
   depends_on = [
     postgresql_role.default,
@@ -139,7 +139,7 @@ resource "postgresql_grant" "table" {
 }
 
 resource "time_sleep" "grant_table_wait" {
-  for_each = { for k, v in local.roles_set : k => v if length(v.table_privileges) > 0 }
+  for_each = { for k, v in local.roles_set : k => v if v.table_privileges != null }
 
   destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
   create_duration  = format("%ss", sum([2 * each.value.index, 3]))
@@ -150,13 +150,13 @@ resource "time_sleep" "grant_table_wait" {
 }
 
 resource "postgresql_grant" "sequence" {
-  for_each = { for k, v in local.roles_set : k => v if length(v.sequence_privileges) > 0 }
+  for_each = { for k, v in local.roles_set : k => v if v.sequence_privileges != null }
 
   database    = each.value.database
   role        = time_sleep.role_wait[each.key].triggers["role"]
   schema      = each.value.schema
   object_type = "sequence"
-  privileges  = split(",", each.value.sequence_privileges)
+  privileges  = each.value.sequence_privileges
 
   depends_on = [
     postgresql_role.default,
@@ -168,7 +168,7 @@ resource "postgresql_grant" "sequence" {
 }
 
 resource "time_sleep" "grant_sequence_wait" {
-  for_each = { for k, v in local.roles_set : k => v if length(v.sequence_privileges) > 0 }
+  for_each = { for k, v in local.roles_set : k => v if v.sequence_privileges != null }
 
   destroy_duration = format("%ss", sum([2 * each.value.index, 3]))
   create_duration  = format("%ss", sum([2 * each.value.index, 3]))
