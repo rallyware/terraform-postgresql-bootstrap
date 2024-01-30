@@ -68,6 +68,7 @@ variable "roles" {
       table_privileges          = optional(list(string))
       sequence_privileges       = optional(list(string))
       revoke_public             = optional(bool, true)
+      ignore_changes_privileges = optional(bool, false)
     }
   ))
   default = []
@@ -112,5 +113,7 @@ variable "roles" {
 				A comma separated list of roles which will be granted to sequence.
 			revoke_public:
 				Whether to revoke non-granted privileges form the role.
+			ignore_changes_privileges:
+				Whether to ignore privileges drift.
 	DOC
 }
