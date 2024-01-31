@@ -147,7 +147,7 @@ resource "postgresql_grant" "table_ignore_changes" {
   object_type = "table"
   privileges  = each.value.table_privileges
 
-  lifecycle = {
+  lifecycle {
     ignore_changes = [
       privileges
     ]
@@ -201,7 +201,7 @@ resource "postgresql_grant" "sequence_ignore_changes" {
   object_type = "sequence"
   privileges  = each.value.sequence_privileges
 
-  lifecycle = {
+  lifecycle {
     ignore_changes = [
       privileges
     ]
