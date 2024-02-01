@@ -68,9 +68,15 @@ variable "roles" {
       table_privileges          = optional(list(string))
       sequence_privileges       = optional(list(string))
       revoke_public             = optional(bool, true)
-      ignore_changes_privileges = optional(bool, false)
+      ignore_changes_privileges = optional(list(string))
     }
   ))
+
+  validation {
+    condition     = contains([for r in var.roles : r.ignore_changes_privileges], "table") || contains([for r in var.roles : r.ignore_changes_privileges], "sequence") || !alltrue([for r in var.roles : length(r.ignore_changes_privileges) > 0])
+    error_message = "Only table and sequence objects are allowed for ignore_changes_privileges."
+  }
+
   default = []
   #tfsec:ignore:general-secrets-no-plaintext-exposure
   description = <<-DOC
@@ -114,6 +120,6 @@ variable "roles" {
 			revoke_public:
 				Whether to revoke non-granted privileges form the role.
 			ignore_changes_privileges:
-				Whether to ignore privileges drift.
+				List of objects for which privilege changes should be ignored.
 	DOC
 }
