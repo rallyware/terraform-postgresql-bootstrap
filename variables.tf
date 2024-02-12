@@ -46,30 +46,47 @@ variable "databases" {
 }
 
 variable "roles" {
-  type = list(object(
-    {
-      name                      = string
-      database                  = optional(string)
-      superuser                 = optional(bool, false)
-      create_database           = optional(bool, false)
-      create_role               = optional(bool, false)
-      inherit                   = optional(bool, true)
-      login                     = optional(bool, true)
-      replication               = optional(bool, false)
-      connection_limit          = optional(number, -1)
-      encrypted_password        = optional(bool, true)
-      bypass_row_level_security = optional(bool, false)
-      valid_until               = optional(string, "infinity")
-      roles                     = optional(list(string))
-      search_path               = optional(list(string))
-      schema                    = optional(string, "public")
-      with_grant_option         = optional(string, false)
-      database_privileges       = optional(list(string))
-      table_privileges          = optional(list(string))
-      sequence_privileges       = optional(list(string))
-      revoke_public             = optional(bool, true)
-    }
-  ))
+  type = list(
+    object(
+      {
+        name                      = string
+        database                  = optional(string)
+        superuser                 = optional(bool, false)
+        create_database           = optional(bool, false)
+        create_role               = optional(bool, false)
+        inherit                   = optional(bool, true)
+        login                     = optional(bool, true)
+        replication               = optional(bool, false)
+        connection_limit          = optional(number, -1)
+        encrypted_password        = optional(bool, true)
+        bypass_row_level_security = optional(bool, false)
+        valid_until               = optional(string, "infinity")
+        roles                     = optional(list(string))
+        search_path               = optional(list(string))
+        schema                    = optional(string, "public")
+        with_grant_option         = optional(string, false)
+        database_privileges       = optional(list(string))
+        table_privileges          = optional(list(string))
+        sequence_privileges       = optional(list(string))
+        revoke_public             = optional(bool, true)
+        ignore_changes_privileges = optional(list(string), [])
+      }
+    )
+  )
+
+  validation {
+    condition = alltrue(
+      flatten(
+        [for r in var.roles :
+          [for p in r.ignore_changes_privileges :
+            contains(["table", "sequence"], p)
+          ]
+        ]
+      )
+    )
+    error_message = "Only table and sequence objects are allowed in ignore_changes_privileges option."
+  }
+
   default = []
   #tfsec:ignore:general-secrets-no-plaintext-exposure
   description = <<-DOC
@@ -112,5 +129,7 @@ variable "roles" {
 				A comma separated list of roles which will be granted to sequence.
 			revoke_public:
 				Whether to revoke non-granted privileges form the role.
+			ignore_changes_privileges:
+				List of objects for which privilege changes should be ignored.
 	DOC
 }

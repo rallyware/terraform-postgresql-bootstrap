@@ -122,13 +122,36 @@ resource "time_sleep" "grant_database_wait" {
 }
 
 resource "postgresql_grant" "table" {
-  for_each = { for k, v in local.roles_set : k => v if v.table_privileges != null }
+  for_each = { for k, v in local.roles_set : k => v if v.table_privileges != null && !contains(v.ignore_changes_privileges, "table") }
 
   database    = each.value.database
   role        = time_sleep.role_wait[each.key].triggers["role"]
   schema      = each.value.schema
   object_type = "table"
   privileges  = each.value.table_privileges
+
+  depends_on = [
+    postgresql_role.default,
+    time_sleep.db_wait,
+    time_sleep.role_wait,
+    time_sleep.grant_database_wait
+  ]
+}
+
+resource "postgresql_grant" "table_ignore_changes" {
+  for_each = { for k, v in local.roles_set : k => v if v.table_privileges != null && contains(v.ignore_changes_privileges, "table") }
+
+  database    = each.value.database
+  role        = time_sleep.role_wait[each.key].triggers["role"]
+  schema      = each.value.schema
+  object_type = "table"
+  privileges  = each.value.table_privileges
+
+  lifecycle {
+    ignore_changes = [
+      privileges
+    ]
+  }
 
   depends_on = [
     postgresql_role.default,
@@ -145,18 +168,44 @@ resource "time_sleep" "grant_table_wait" {
   create_duration  = format("%ss", sum([2 * each.value.index, 3]))
 
   depends_on = [
-    postgresql_grant.table
+    postgresql_grant.table,
+    postgresql_grant.table_ignore_changes
   ]
 }
 
 resource "postgresql_grant" "sequence" {
-  for_each = { for k, v in local.roles_set : k => v if v.sequence_privileges != null }
+  for_each = { for k, v in local.roles_set : k => v if v.sequence_privileges != null && !contains(v.ignore_changes_privileges, "sequence") }
 
   database    = each.value.database
   role        = time_sleep.role_wait[each.key].triggers["role"]
   schema      = each.value.schema
   object_type = "sequence"
   privileges  = each.value.sequence_privileges
+
+  depends_on = [
+    postgresql_role.default,
+    time_sleep.db_wait,
+    time_sleep.role_wait,
+    time_sleep.grant_database_wait,
+    time_sleep.grant_table_wait
+  ]
+}
+
+
+resource "postgresql_grant" "sequence_ignore_changes" {
+  for_each = { for k, v in local.roles_set : k => v if v.sequence_privileges != null && contains(v.ignore_changes_privileges, "sequence") }
+
+  database    = each.value.database
+  role        = time_sleep.role_wait[each.key].triggers["role"]
+  schema      = each.value.schema
+  object_type = "sequence"
+  privileges  = each.value.sequence_privileges
+
+  lifecycle {
+    ignore_changes = [
+      privileges
+    ]
+  }
 
   depends_on = [
     postgresql_role.default,
@@ -174,7 +223,8 @@ resource "time_sleep" "grant_sequence_wait" {
   create_duration  = format("%ss", sum([2 * each.value.index, 3]))
 
   depends_on = [
-    postgresql_grant.sequence
+    postgresql_grant.sequence,
+    postgresql_grant.sequence_ignore_changes
   ]
 }
 
