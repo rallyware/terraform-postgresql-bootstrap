@@ -46,35 +46,45 @@ variable "databases" {
 }
 
 variable "roles" {
-  type = list(object(
-    {
-      name                      = string
-      database                  = optional(string)
-      superuser                 = optional(bool, false)
-      create_database           = optional(bool, false)
-      create_role               = optional(bool, false)
-      inherit                   = optional(bool, true)
-      login                     = optional(bool, true)
-      replication               = optional(bool, false)
-      connection_limit          = optional(number, -1)
-      encrypted_password        = optional(bool, true)
-      bypass_row_level_security = optional(bool, false)
-      valid_until               = optional(string, "infinity")
-      roles                     = optional(list(string))
-      search_path               = optional(list(string))
-      schema                    = optional(string, "public")
-      with_grant_option         = optional(string, false)
-      database_privileges       = optional(list(string))
-      table_privileges          = optional(list(string))
-      sequence_privileges       = optional(list(string))
-      revoke_public             = optional(bool, true)
-      ignore_changes_privileges = optional(list(string))
-    }
-  ))
+  type = list(
+    object(
+      {
+        name                      = string
+        database                  = optional(string)
+        superuser                 = optional(bool, false)
+        create_database           = optional(bool, false)
+        create_role               = optional(bool, false)
+        inherit                   = optional(bool, true)
+        login                     = optional(bool, true)
+        replication               = optional(bool, false)
+        connection_limit          = optional(number, -1)
+        encrypted_password        = optional(bool, true)
+        bypass_row_level_security = optional(bool, false)
+        valid_until               = optional(string, "infinity")
+        roles                     = optional(list(string))
+        search_path               = optional(list(string))
+        schema                    = optional(string, "public")
+        with_grant_option         = optional(string, false)
+        database_privileges       = optional(list(string))
+        table_privileges          = optional(list(string))
+        sequence_privileges       = optional(list(string))
+        revoke_public             = optional(bool, true)
+        ignore_changes_privileges = optional(list(string), [])
+      }
+    )
+  )
 
   validation {
-    condition     = contains([for r in var.roles : r.ignore_changes_privileges], "table") || contains([for r in var.roles : r.ignore_changes_privileges], "sequence") || !alltrue([for r in var.roles : length(r.ignore_changes_privileges) > 0])
-    error_message = "Only table and sequence objects are allowed for ignore_changes_privileges."
+    condition = alltrue(
+      flatten(
+        [for r in var.roles :
+          [for p in r.ignore_changes_privileges :
+            contains(["table", "sequence"], p)
+          ]
+        ]
+      )
+    )
+    error_message = "Only table and sequence objects are allowed in ignore_changes_privileges option."
   }
 
   default = []
