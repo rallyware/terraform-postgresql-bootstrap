@@ -21,7 +21,7 @@ locals {
 resource "random_password" "default" {
   for_each = local.roles_set
 
-  length  = 16
+  length  = each.value.password_length
   special = false
 }
 
