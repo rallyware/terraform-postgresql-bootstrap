@@ -37,11 +37,11 @@ variable "databases" {
 			template:
 				The name of the template database from which to create the database. For `non-RDS` should be `template0`.
 			encoding:
-				Character set encoding to use in the database. 
+				Character set encoding to use in the database.
 			lc_collate:
 				Collation order to use in the database.
 			lc_ctype:
-				Character classification to use in the database. 
+				Character classification to use in the database.
   DOC
 }
 
@@ -70,6 +70,7 @@ variable "roles" {
         sequence_privileges       = optional(list(string))
         revoke_public             = optional(bool, true)
         ignore_changes_privileges = optional(list(string), [])
+        password_length           = optional(number, 16)
       }
     )
   )
@@ -110,7 +111,7 @@ variable "roles" {
 			bypass_row_level_security:
 				Defines whether a role bypasses every row-level security (RLS) policy.
 			connection_limit:
-				How many concurrent connections the role can establish. 
+				How many concurrent connections the role can establish.
 			encrypted_password:
 				Defines whether the password is stored encrypted in the system catalogs.
 			roles:
@@ -131,5 +132,7 @@ variable "roles" {
 				Whether to revoke non-granted privileges form the role.
 			ignore_changes_privileges:
 				List of objects for which privilege changes should be ignored.
+			password_length:
+			  The length of the password to generate.
 	DOC
 }
